@@ -2,7 +2,7 @@ import React, {useState} from 'react'
 import { Link } from 'react-router-dom'
 
 
-const join = () => {
+const Join = () => {
   const [name, setName] = useState('')
   const [room, setRoom] = useState('')
   return (
@@ -19,4 +19,4 @@ const join = () => {
   )
 }
 
-export default join
+export default Join

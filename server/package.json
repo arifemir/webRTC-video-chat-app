@@ -4,14 +4,20 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start-server-dev": "nodemon index.js"
+    "server": "nodemon index.js",
+    "client-install": "npm install --prefix ../client",
+    "install-full": "concurrently \"npm run client-install\" \"npm install\"",
+    "client": "npm start --prefix ../client",
+    "dev": "concurrently \"npm run server\" \"npm run client\""
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "concurrently": "^5.3.0",
     "cors": "^2.8.5",
     "express": "^4.17.1",
+    "morgan": "^1.10.0",
     "nodemon": "^2.0.6",
     "socket.io": "^3.0.3"
   }

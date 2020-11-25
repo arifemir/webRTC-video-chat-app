@@ -2,14 +2,22 @@ import React, {useState, useEffect} from 'react'
 import io from 'socket.io-client'
 import queryString from 'query-string'
 
-const chat = () => {
+let socket
+
+const Chat = ({location}) => {
   const [name, setName] = useState('')
   const [room, setRoom] = useState('')
+  const ENDPOINT = '/'
 
-  useEffect(({location}) => {
+  useEffect(() => {
     const {name, room} = queryString.parse(location.search)
+
+    socket = io(ENDPOINT)
+
     setName(name)
     setRoom(room)
+
+    console.log(socket);
   }, [])
 
   return (
@@ -19,4 +27,4 @@ const chat = () => {
   )
 }
 
-export default chat
+export default Chat
