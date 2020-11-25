@@ -16,8 +16,12 @@ app.use(morgan('dev'))
 app.use(router)
 
 io.on('connection', (socket) => {
-  console.log(socket)
-  console.log('user signin')
+  socket.on('join', ({name, room}, callback) => {
+    console.log(name, room)
+
+    let error = true
+    callback({error})
+  })
   io.on('disconnect', () => {
     console.log('user signout')
   })
