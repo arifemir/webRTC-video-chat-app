@@ -7,6 +7,8 @@ let socket
 const Chat = ({location}) => {
   const [name, setName] = useState('')
   const [room, setRoom] = useState('')
+  const [message, setMessage] = useState('')
+  const [messages, setMessages] = useState([])
   const ENDPOINT = '/'
 
   useEffect(() => {
@@ -21,7 +23,22 @@ const Chat = ({location}) => {
       if(err) console.log(err.error)
     })
 
+    return () => {
+      socket.emit('disconnect')
+      socket.off()
+    }
+
   }, [ENDPOINT, location.search])
+
+  useEffect(() => {
+    socket.on('message', (message) => {
+      setMessages([...messages, message])
+    })
+  }, [messages])
+
+  useEffect(() => {
+    socket.emit('sendMessage')
+  }, [])
 
   return (
     <div>
