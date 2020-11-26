@@ -33,12 +33,15 @@ const Chat = ({location}) => {
   useEffect(() => {
     socket.on('message', (message) => {
       setMessages([...messages, message])
+      console.log(message);
     })
   }, [messages])
 
   useEffect(() => {
-    socket.emit('sendMessage')
-  }, [])
+    socket.emit('sendMessage', {message}, (err) => {
+      if(err) console.log(err.error)
+    })
+  }, [messages])
 
   return (
     <div>

@@ -6,7 +6,7 @@ const cors = require('cors');
 const PORT = process.env.PORT || 5000
 
 const router = require('./router');
-const { addUser } = require('./users');
+const { addUser, getUser, removeUser, getUsersInRoom } = require('./users');
 
 const app = express()
 const server = http.createServer(app)
@@ -35,11 +35,17 @@ io.on('connection', (socket) => {
     callback()
   })
 
-  socket.on('sendMessage', (message, callback) => {
-    const user = getUser(socket.id)
+  socket.on('sendMessage', async (message, callback) => {
+    let user = false
+    let error = false
+    try {
+      user = await getUser(socket.id)
+    } catch (e) {
+      error = e
+    }
+    if(error) return callback(error)
 
     io.to(user.room).emit('message', {user: user.name, text: message})
-
     callback()
   })
 
