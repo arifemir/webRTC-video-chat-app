@@ -28,8 +28,8 @@ const getUser = (id) => new Promise((resolve, reject) => {
 })
 
 const getUsersInRoom = (room) => new Promise((resolve, reject) => {
-  const users = users.filter(user => user.room === room);
-  if(users.length !== 0) return resolve(users)
+  const onlineUsers = users.filter(user => user.room === room);
+  if(onlineUsers.length !== 0) return resolve(onlineUsers)
   else return reject({error: 'User not found in room'})
 })
 

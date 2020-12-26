@@ -17,7 +17,6 @@ app.use(morgan('dev'))
 app.use('/api', router)
 
 io.on('connection', (socket) => {
-  console.log('user signin')
   socket.on('join', async ({name, room}, callback) => {
     let error = false
     let user = false
@@ -29,10 +28,13 @@ io.on('connection', (socket) => {
     }
     if(error) return callback({error})
 
-    socket.emit('message', {user: 'admin', text: `${user.name}, welcome to the room ${user.room}`})
-    socket.broadcast.to(user.room).emit('message', {user: 'admin', text: `${user.name}, has joined!`})
-    socket.join(user.room)
-    callback()
+    socket.join(user.room);
+
+    socket.emit('message', { user: 'admin', text: `${user.name}, welcome to room ${user.room}.`});
+    socket.broadcast.to(user.room).emit('message', { user: 'admin', text: `${user.name} has joined!` });
+    io.to(user.room).emit('roomData', { room: user.room, users: await getUsersInRoom(user.room) });
+
+    callback();
   })
 
   socket.on('sendMessage', async (message, callback) => {
@@ -49,8 +51,21 @@ io.on('connection', (socket) => {
     callback()
   })
 
-  io.on('disconnect', () => {
-    console.log('user signout')
+  io.on('disconnect', async () => {
+    let user = false
+    let error = false
+
+    try {
+      user = await removeUser(socket.id)
+    } catch (e) {
+      error = e
+    }
+    if(error) return callback(error)
+
+    if(user) {
+      io.to(user.room).emit('message', { user: 'Admin', text: `${user.name} has left.` });
+      io.to(user.room).emit('roomData', { room: user.room, users: getUsersInRoom(user.room)});
+    }
   })
 })
 
