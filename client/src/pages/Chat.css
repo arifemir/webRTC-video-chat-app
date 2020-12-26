@@ -20,13 +20,6 @@
   align-items: center;
 }
 
-.video {
-  border: 1px solid #2979FF;
-  border-radius: 4px;
-  width: 25%;
-  height: 45%;
-}
-
 .container-mesagges-text {
   display: flex;
   justify-content: space-around;
