@@ -1,6 +1,6 @@
 const users = []
 
-const addUser = ({id, name, room}) => new Promise((resolve, reject) => {
+const addUser = ({id, name, room, peerId}) => new Promise((resolve, reject) => {
     name = name.trim().toLowerCase()
     room = room.trim().toLowerCase()
   
@@ -8,7 +8,7 @@ const addUser = ({id, name, room}) => new Promise((resolve, reject) => {
   
     if(existingUser) reject({error: 'Username is taken'})
   
-    const user = {id, name, room}
+    const user = {id, name, room, peerId}
   
     users.push(user)
   

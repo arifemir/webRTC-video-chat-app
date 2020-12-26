@@ -17,11 +17,11 @@ app.use(morgan('dev'))
 app.use('/api', router)
 
 io.on('connection', (socket) => {
-  socket.on('join', async ({name, room}, callback) => {
+  socket.on('join', async ({name, room, id}, callback) => {
     let error = false
     let user = false
     try {
-      user = await addUser({id: socket.id, name, room})
+      user = await addUser({id: socket.id, name, room, peerId: id})
       console.log(user);
     } catch (e) {
       error = e
