@@ -1,5 +1,5 @@
 import React, {useState, useEffect, useRef} from 'react'
-import io from 'socket.io-client'
+import socket from '../configs/socketConfig'
 import queryString from 'query-string'
 import Peer from 'peerjs'
 import InfoBar from '../components/InfoBar'
@@ -9,7 +9,6 @@ import TextContainer from '../components/TextContainer'
 import Video from '../components/video'
 import './Chat.css';
 
-let socket
 
 const Chat = ({location}) => {
   const [name, setName] = useState('')
@@ -17,24 +16,43 @@ const Chat = ({location}) => {
   const [users, setUsers] = useState('');
   const [message, setMessage] = useState('')
   const [messages, setMessages] = useState([])
-  const [myVideo, setMyVideo] = useState(null);
-  const ENDPOINT = '/'
+  const [peers, setPeers] = useState({})
+  const myPeer = new Peer(undefined, {
+    host: '/',
+    port: '3001'
+  })
 
   useEffect(() => {
     const {name, room} = queryString.parse(location.search)
-    socket = io(ENDPOINT)
 
     setName(name)
     setRoom(room)
 
-    const myPeer = new Peer(undefined, {
-      host: '/',
-      port: '3001'
-    })
+    const myVideo = document.createElement('video')
+    myVideo.muted = true
 
     myPeer.on('open', id => {
       socket.emit('join', {name, room, id}, (err) => {
         if(err) console.log(err.error)
+
+        navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: true
+        }).then(stream => {
+          addVideoStream(myVideo, stream)
+
+          myPeer.on('call', call => {
+            call.answer(stream)
+            const video = document.createElement('video')
+            call.on('stream', userVideoStream => {
+              addVideoStream(video, userVideoStream)
+            })
+          })
+        
+          socket.on('user-connected', userId => {
+            connectToNewUser(userId, stream)
+          })
+        })
       })
     })
 
@@ -43,18 +61,7 @@ const Chat = ({location}) => {
       socket.off()
     }
 
-  }, [ENDPOINT, location.search])
-
-  useEffect(() => {
-    navigator.mediaDevices.getUserMedia({
-      video: true,
-      audio: true
-    }).then(stream => {
-      setMyVideo(<Video muted id={name} />)
-      document.getElementById('video' + name).srcObject = stream
-    })
-    console.log('sa');
-  }, [])
+  }, [location.search])
 
   useEffect(() => {
     socket.on('message', message => {
@@ -74,10 +81,32 @@ const Chat = ({location}) => {
     }
   }
 
+  function addVideoStream(video, stream) {
+    const videoGrid = document.querySelector('div.container-video');
+    video.srcObject = stream
+    video.addEventListener('loadedmetadata', () => {
+      video.play()
+    })
+    console.log(videoGrid);
+    videoGrid.append(video)
+  }
+
+  function connectToNewUser(userId, stream) {
+    const call = myPeer.call(userId, stream)
+    const video = document.createElement('video')
+    call.on('stream', userVideoStream => {
+      addVideoStream(video, userVideoStream)
+    })
+    call.on('close', () => {
+      video.remove()
+    })
+  
+    setPeers(prevPeers => prevPeers[userId] = call)
+  }
+
   return (
     <div className="outerContainer">
       <div className='container-video'>
-        {myVideo}
       </div>
       <div className="container-mesagges-text">
         <div className="container-messages">
