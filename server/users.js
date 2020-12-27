@@ -17,7 +17,7 @@ const addUser = ({id, name, room, peerId}) => new Promise((resolve, reject) => {
 
 const removeUser = (id) => new Promise((resolve, reject) => {
   const index = users.findIndex(user => user.id === id)
-  if(index !== -1) return resolve(users.splice(index, 1)[0])
+  if(index !== -1) { return resolve(users.splice(index, 1)) }
   else return reject({error: 'User not found for removing'})
 })
 
