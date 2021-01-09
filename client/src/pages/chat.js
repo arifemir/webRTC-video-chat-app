@@ -1,123 +1,137 @@
-import React, {useState, useEffect, useRef} from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import socket from '../configs/socketConfig'
+import Peer from 'simple-peer'
 import queryString from 'query-string'
-import Peer from 'peerjs'
 import InfoBar from '../components/InfoBar'
 import Messages from '../components/Messages'
 import Input from '../components/Input'
 import TextContainer from '../components/TextContainer'
 import Video from '../components/video'
-import './Chat.css';
+import { videoDimensions } from '../constants/videoConstraints'
+import './Chat.css'
 
+const Chat = ({ location }) => {
+	const [name, setName] = useState('')
+	const [room, setRoom] = useState('')
+	const [users, setUsers] = useState('')
+	const [message, setMessage] = useState('')
+	const [messages, setMessages] = useState([])
+	const [peers, setPeers] = useState([])
+	const socketRef = useRef()
+	const userVideo = useRef()
+	const peersRef = useRef([])
 
-const Chat = ({location}) => {
-  const [name, setName] = useState('')
-  const [room, setRoom] = useState('')
-  const [users, setUsers] = useState('');
-  const [message, setMessage] = useState('')
-  const [messages, setMessages] = useState([])
-  const [peers, setPeers] = useState({})
-  const myPeer = new Peer(undefined, {
-    host: '/',
-    port: '3001'
-  })
+	useEffect(() => {
+		const { name, room } = queryString.parse(location.search)
 
-  useEffect(() => {
-    const {name, room} = queryString.parse(location.search)
+		setName(name)
+		setRoom(room)
 
-    setName(name)
-    setRoom(room)
+		socket.emit('join-chat', { name, room }, (err) => {
+			if (err) console.log(err.error)
+		})
+	}, [location.search])
 
-    const myVideo = document.createElement('video')
-    myVideo.muted = true
+	useEffect(() => {
+		socket.on('message', (message) => {
+			setMessages((messages) => [...messages, message])
+		})
 
-    myPeer.on('open', id => {
-      socket.emit('join', {name, room, id}, (err) => {
-        if(err) console.log(err.error)
+		socket.on('roomData', ({ users }) => {
+			setUsers(users)
+		})
+	}, [])
 
-        navigator.mediaDevices.getUserMedia({
-          video: true,
-          audio: true
-        }).then(stream => {
-          addVideoStream(myVideo, stream)
+	useEffect(() => {
+		socketRef.current = socket.connect('/')
+		navigator.mediaDevices.getUserMedia({ video: videoDimensions, audio: true }).then((stream) => {
+			userVideo.current.srcObject = stream
+			socketRef.current.emit('join-video', room)
+			socketRef.current.on('all users', (users) => {
+				const peers = []
+				users.forEach((userID) => {
+					const peer = createPeer(userID, socketRef.current.id, stream)
+					peersRef.current.push({
+						peerID: userID,
+						peer,
+					})
+					peers.push(peer)
+				})
+				setPeers(peers)
+			})
 
-          myPeer.on('call', call => {
-            call.answer(stream)
-            const video = document.createElement('video')
-            call.on('stream', userVideoStream => {
-              addVideoStream(video, userVideoStream)
-            })
-          })
-        
-          socket.on('user-connected', userId => {
-            connectToNewUser(userId, stream)
-          })
-        })
-      })
-    })
+			socketRef.current.on('user joined', (payload) => {
+				const peer = addPeer(payload.signal, payload.callerID, stream)
+				peersRef.current.push({
+					peerID: payload.callerID,
+					peer,
+				})
 
-    return () => {
-      socket.emit('disconnect')
-      socket.off()
-    }
+				setPeers((users) => [...users, peer])
+			})
 
-  }, [location.search])
+			socketRef.current.on('receiving returned signal', (payload) => {
+				const item = peersRef.current.find((p) => p.peerID === payload.id)
+				item.peer.signal(payload.signal)
+			})
+		})
+	}, [])
 
-  useEffect(() => {
-    socket.on('message', message => {
-      setMessages(messages => [ ...messages, message ]);
-    });
-    
-    socket.on("roomData", ({ users }) => {
-      setUsers(users);
-    });
-  }, []);
+	function createPeer(userToSignal, callerID, stream) {
+		const peer = new Peer({
+			initiator: true,
+			trickle: false,
+			stream,
+		})
 
-  const sendMessage = (event) => {
-    event.preventDefault();
+		peer.on('signal', (signal) => {
+			socketRef.current.emit('sending signal', { userToSignal, callerID, signal })
+		})
 
-    if(message) {
-      socket.emit('sendMessage', message, () => setMessage(''));
-    }
-  }
+		return peer
+	}
 
-  function addVideoStream(video, stream) {
-    const videoGrid = document.querySelector('div.container-video');
-    video.srcObject = stream
-    video.addEventListener('loadedmetadata', () => {
-      video.play()
-    })
-    console.log(videoGrid);
-    videoGrid.append(video)
-  }
+	function addPeer(incomingSignal, callerID, stream) {
+		const peer = new Peer({
+			initiator: false,
+			trickle: false,
+			stream,
+		})
 
-  function connectToNewUser(userId, stream) {
-    const call = myPeer.call(userId, stream)
-    const video = document.createElement('video')
-    call.on('stream', userVideoStream => {
-      addVideoStream(video, userVideoStream)
-    })
-    call.on('close', () => {
-      video.remove()
-    })
-  
-    setPeers(prevPeers => prevPeers[userId] = call)
-  }
+		peer.on('signal', (signal) => {
+			socketRef.current.emit('returning signal', { signal, callerID })
+		})
 
-  return (
-    <div className="outerContainer">
-      <div className='container-video'>
-      </div>
-      <div className="container-mesagges-text">
-        <div className="container-messages">
-          <InfoBar room={room} />
-          <Messages messages={messages} name={name} />
-          <Input message={message} setMessage={setMessage} sendMessage={sendMessage} />
-        </div>
-        <TextContainer users={users}/>
-      </div>
-    </div>
-  )
+		peer.signal(incomingSignal)
+
+		return peer
+	}
+	const sendMessage = (event) => {
+		event.preventDefault()
+
+		if (message) {
+			socket.emit('sendMessage', message, () => setMessage(''))
+		}
+	}
+
+	return (
+		<div className='outerContainer'>
+			<div className='container-video'>
+				<video muted ref={userVideo} autoPlay playsInline />
+				{peers.map((peer, index) => {
+					return <Video key={index} peer={peer} />
+				})}
+			</div>
+			<div className='container-mesagges-text'>
+				<div className='container-messages'>
+					<InfoBar room={room} />
+					<Messages messages={messages} name={name} />
+					<Input message={message} setMessage={setMessage} sendMessage={sendMessage} />
+				</div>
+				<TextContainer users={users} />
+			</div>
+		</div>
+	)
 }
 
 export default Chat

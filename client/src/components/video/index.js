@@ -1,13 +1,15 @@
-import React, {useRef, useEffect} from 'react'
+import React, { useRef, useEffect } from 'react'
 
-import './Video.css'
+const Video = (props) => {
+	const ref = useRef()
 
-const Video = ({id, muted}) => {
-  return (
-    <div className='video' >
-      <video id={'video' + id} muted={muted} autoPlay />
-    </div>
-  )
+	useEffect(() => {
+		props.peer.on('stream', (stream) => {
+			ref.current.srcObject = stream
+		})
+	}, [])
+
+	return <video playsInline autoPlay ref={ref} {...props} />
 }
- 
+
 export default Video
