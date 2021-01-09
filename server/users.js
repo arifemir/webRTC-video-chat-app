@@ -27,6 +27,10 @@ const getUser = (id) => new Promise((resolve, reject) => {
   else return reject({error: 'User not found'})
 })
 
+const getAllUser = () => {
+  return users;
+}
+
 const getUsersInRoom = (room) => new Promise((resolve, reject) => {
   const onlineUsers = users.filter(user => user.room === room);
   if(onlineUsers.length !== 0) return resolve(onlineUsers)
@@ -34,5 +38,5 @@ const getUsersInRoom = (room) => new Promise((resolve, reject) => {
 })
 
 module.exports = {
-  addUser, removeUser, getUser, getUsersInRoom
+  addUser, removeUser, getUser, getUsersInRoom, getAllUser
 }

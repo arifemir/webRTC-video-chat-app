@@ -8,8 +8,7 @@
     "client-install": "npm install --prefix ../client",
     "install-full": "concurrently \"npm run client-install\" \"npm install\"",
     "client": "npm start --prefix ../client",
-    "peer-server": "peerjs --port 3001",
-    "dev": "concurrently \"npm run server\" \"npm run client\" \"npm run peer-server\""
+    "dev": "concurrently \"npm run server\" \"npm run client\""
   },
   "keywords": [],
   "author": "",
@@ -20,7 +19,6 @@
     "express": "^4.17.1",
     "morgan": "^1.10.0",
     "nodemon": "^2.0.6",
-    "socket.io": "^3.0.3",
-    "uuid": "^8.3.1"
+    "socket.io": "^3.0.3"
   }
 }
