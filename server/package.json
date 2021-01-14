@@ -9,6 +9,7 @@
     "install-full": "concurrently \"npm run client-install\" \"npm install\"",
     "client": "npm start --prefix ../client",
     "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "prod": "concurrently \"npm run client\" \"npm run start\"",
     "start": "node index.js"
   },
   "keywords": [],
