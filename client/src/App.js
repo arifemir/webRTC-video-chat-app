@@ -1,8 +1,8 @@
 import React from 'react'
 import {BrowserRouter as Router, Route} from 'react-router-dom'
 
-import Join from './pages/Join'
-import Chat from './pages/Chat'
+import Join from './pages/join'
+import Chat from './pages/chat'
 
 const App = () => {
   return (
