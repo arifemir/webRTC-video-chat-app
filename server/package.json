@@ -8,7 +8,8 @@
     "client-install": "npm install --prefix ../client",
     "install-full": "concurrently \"npm run client-install\" \"npm install\"",
     "client": "npm start --prefix ../client",
-    "dev": "concurrently \"npm run server\" \"npm run client\""
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "start": "node index.js"
   },
   "keywords": [],
   "author": "",
